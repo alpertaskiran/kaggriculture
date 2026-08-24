@@ -1,6 +1,6 @@
 # Kaggriculture Strategy Notes
 
-> This document consolidates the Kaggriculture discussion in the referenced ChatGPT conversation. The current project mirror contains no uploaded notebooks (`sources/` is empty), so notebook-specific details below are limited to what the conversation itself reported.
+> This document consolidates the Kaggriculture discussion in the referenced ChatGPT conversation and the uploaded notebooks stored in `Kaggriculture-notebooks/`.
 
 ## 1. What the game is
 
@@ -160,6 +160,24 @@ The exact implementation may use frozen action arrays or an embedded source stri
 - Can the embedded/generated code be normalized and diffed?
 - Are results compared with the implementation, not only the leaderboard score?
 
-## 11. Current project status
+## 11. Notebook inventory and evidence update
 
-The dedicated notebook folder has been created at `Kaggriculture-notebooks/`. No notebook files were moved because the current project mirror has no `.ipynb` uploads; `sources/` is empty. When the notebooks become available, preserve their filenames in that folder and disambiguate only actual collisions.
+The repository now includes the uploaded notebooks, preserving their filenames:
+
+- `adaptive-farming-strategy-for-kaggriculture.ipynb`
+- `kaggriculture-findings-from-zero-to-top-meta.ipynb`
+- `kaggriculture-multi-route-farming-agent.ipynb`
+- `kaggriculture-rank-your-agent.ipynb`
+- `my-2026-08-04-high-score-pipeline.ipynb`
+- `v13-r3-top-meta-order-safe-premium-control.ipynb`
+- `v16-rc5-high-score-8c-4s-premium-market-lead.ipynb`
+- `v20-adaptive-r1-multi-route-agent.ipynb`
+- `v111-8c4s-economic-core-premium-lead.ipynb`
+- `25-27-strict-future-v27-midgame-meta-reset.ipynb`
+- `60-64-recent-gold-climbers-v45-market-phase.ipynb`
+- `103-128-fresh-public-v43-sparse-shop-hybrid.ipynb`
+- `177-180-fresh-top-30-v21-1-conditional-memory.ipynb`
+
+The notebook contents reinforce and sharpen the strategy summary. They describe a 720-turn season as 30 days × 24 turns, a starting cash balance of $3000, shared-market queue effects, replay-derived route extraction, and head-to-head evaluation. The later V43/V45/V21.1/V27 notebooks focus on sparse shop branching, market-phase timing, conditional memory, and replacing stale midgame continuations. The V13 and V16-RC5/V111 notebooks explicitly implement conservative premium-market leads on top of a complete production route. The adaptive and multi-route notebooks encode route selection among yarn-led, milk-supported, and balanced plans.
+
+These details should be treated as implementation evidence rather than universal game rules: each notebook is an experiment or submission variant, and the competition engine version and evaluation protocol must be pinned when reproducing results.
