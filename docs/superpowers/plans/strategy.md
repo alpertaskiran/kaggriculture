@@ -181,3 +181,40 @@ The repository now includes the uploaded notebooks, preserving their filenames:
 The notebook contents reinforce and sharpen the strategy summary. They describe a 720-turn season as 30 days × 24 turns, a starting cash balance of $3000, shared-market queue effects, replay-derived route extraction, and head-to-head evaluation. The later V43/V45/V21.1/V27 notebooks focus on sparse shop branching, market-phase timing, conditional memory, and replacing stale midgame continuations. The V13 and V16-RC5/V111 notebooks explicitly implement conservative premium-market leads on top of a complete production route. The adaptive and multi-route notebooks encode route selection among yarn-led, milk-supported, and balanced plans.
 
 These details should be treated as implementation evidence rather than universal game rules: each notebook is an experiment or submission variant, and the competition engine version and evaluation protocol must be pinned when reproducing results.
+
+## 12. Newly analyzed notebooks: router strategy
+
+The three recently added notebooks make the architecture more concrete:
+
+- `kaggriculture-101.ipynb` explains the progression from a simple melon strategy to a diversified market strategy and finally a dynamic “Farm OS.” Its economic priorities include profitable production, geese for eggs and fertilizer, feed protection, labor, land, shed capacity, and aggressive end-of-season selling.
+- `kaggriculture-reactive-router.ipynb` stores complete action tapes and selects among them at known information points. It branches around step 144 (day 6) based on shop availability and around step 648 (day 27) based on market inventory, then applies runtime corrections such as weed repair, hand alignment, sale timing, storage protection, and terminal liquidation.
+- `shop-router-0909.ipynb` refines the same approach with 13 route tapes. It chooses a route from the first two revealed shops at day 6, uses same-day worker queues when weeds interrupt work, advances eligible sales by one turn, and forces a common late-season route before final liquidation.
+
+The shared strategy can be summarized as:
+
+```text
+economic thesis
+    -> complete season route
+    -> branch when new shop/market information appears
+    -> execute the route
+    -> apply narrow safety repairs
+    -> liquidate before the final turn
+```
+
+The important reactive safeguards are:
+
+- Insert `DIG` when a weed blocks a planned planting or construction action, delaying only the affected worker’s remaining same-day queue.
+- Align hand actions with the number of active workers so a route remains executable after hiring or state changes.
+- Advance safe planned sales when the next turn’s price and inventory make it worthwhile, while avoiding unlock boundaries and sale duplication.
+- Clamp sales to projected inventory and protect shed capacity before production creates overflow.
+- Reserve money for planned seeds, feed, fertilizer, labor, and land rather than selling or buying solely from the current price.
+- Use opponent-aware or market-aware front-running only for selected premium products such as milk, wool, strawberries, and melons.
+- Stop risky expansion and planting late in the season; enter sellout mode around day 28 and liquidate all remaining inventory on the final action turn.
+
+This explains why the strongest agents are hybrids: the route tape supplies economic discipline, while the reactive layer handles weeds, timing, storage, and small deviations. A completely static tape is brittle, but a fully improvisational price-based agent tends to lose its capital sequence and drift away from its endgame.
+
+## 13. Seeds and reproducible evaluation
+
+The notebooks use seeds as external evaluation inputs. The agent does not infer or recover the seed from its observation. A reproducible test should create the environment with an explicit seed, run the full 720-turn season, and repeat across several fresh seeds. The seed used by the local runner is only a local test setting; it is not part of the agent’s strategy.
+
+For this project, the next meaningful implementation step is therefore to replace the current `PASS` scaffold with a self-contained policy that first establishes a stable opening route, chooses a route at step 144, adds the safety controllers above, and tests the complete 720-turn behavior across multiple explicit seeds.

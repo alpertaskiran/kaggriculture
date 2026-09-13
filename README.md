@@ -352,6 +352,42 @@ env.run([my_agent, "random"])
 env.render(mode="ipython", width=800, height=800)
 ```
 
+## Agent infrastructure
+
+Run a deterministic local episode (the default is the full 720-turn season):
+
+```bash
+uv run python scripts/run_local.py --seed 20260824
+uv run python scripts/run_local.py --seed 7 --steps 10 --opponent random
+```
+
+Benchmark against a built-in opponent or another local Python file. The file
+must expose `agent(observation)` or `main(observation)`:
+
+```bash
+uv run python scripts/benchmark.py --opponent pass --seeds 7 1234 543043
+uv run python scripts/benchmark.py --opponent path/to/opponent.py --seeds 7 1234 --json artifacts/results.json
+```
+
+Each seed is played from both seats. The benchmark reports wins, losses,
+draws, rewards, margins, and terminal statuses.
+
+Build the self-contained Kaggle artifact. The output contains only a root
+`main.py`; notebooks, tests, virtual environments, and caches are excluded:
+
+```bash
+uv run python scripts/package_submission.py
+```
+
+To upload explicitly after configuring Kaggle credentials, add `--submit`:
+
+```bash
+uv run python scripts/package_submission.py --submit
+```
+
+The archive is submitted to the `kaggriculture` competition using the Kaggle
+CLI. Packaging without `--submit` never uploads anything.
+
 ## Configuration Defaults
 
 Per-crop seed costs and per-product base prices are not configurable; they are documented in the Object Types and Price Function tables above. The configurable knobs are:
@@ -369,4 +405,3 @@ Per-crop seed costs and per-product base prices are not configurable; they are d
 | townShopSellInterval | 4 | Turns between consumption ticks by every unlocked town shop instance |
 | townCenterSellInterval | 24 | Turns between consumption ticks by the town center (flat rate, once per day) |
 | seed | null | Optional input seed for deterministic episode generation; cleared from config after read so it stays out of agent observations |
-
