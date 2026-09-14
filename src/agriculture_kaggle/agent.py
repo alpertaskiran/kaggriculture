@@ -1,12 +1,3 @@
-from typing import Any
+from agriculture_kaggle.simple_joe import agent
 
-
-def agent(observation: dict[str, Any]) -> dict[str, Any]:
-    """Return a safe deterministic starter action for Kaggriculture."""
-    if observation.get("step") == 0:
-        return {
-            "farmer": ["PASS"],
-            "hands": [],
-            "market": [["BUY_SEED", "WHEAT", 1]],
-        }
-    return {"farmer": ["PASS"], "hands": [], "market": []}
+__all__ = ["agent"]
