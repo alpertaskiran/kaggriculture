@@ -388,6 +388,133 @@ uv run python scripts/package_submission.py --submit
 The archive is submitted to the `kaggriculture` competition using the Kaggle
 CLI. Packaging without `--submit` never uploads anything.
 
+## Policy optimization experiments
+
+Collect a reproducible trajectory for later planning or learning:
+
+```bash
+uv run python scripts/collect_trajectory.py --seed 7 --output artifacts/trajectory-7.json
+```
+
+Generate and inspect a complete planner route:
+
+```bash
+uv run python scripts/export_route.py --width 8 --output artifacts/route.json
+```
+
+Run route-width optimization on training seeds and validate the selected width
+on held-out seeds:
+
+```bash
+uv run python scripts/optimize_policy.py \
+  --training-seeds 7 1234 \
+  --holdout-seeds 543043 \
+  --widths 1 2 4 8 \
+  --output artifacts/optimization-report.json
+```
+
+Run the experimental tabular RL loop over seeded episodes:
+
+```bash
+uv run python -c 'from agriculture_kaggle.training import train_tabular_policy; import json; print(json.dumps(train_tabular_policy(episodes=10, seeds=[7, 1234], opponents=["pass", "random"]), indent=2))'
+```
+
+The optimization layer encodes observations into a compact daily economic
+state and provides a bounded planner for comparing purchases, production, and
+liquidation decisions. The tabular RL utilities operate on high-level modes
+(`BALANCED`, `MILK`, `WOOL`, `EGG`, and `LIQUIDATE`); training is local only,
+while the exported policy or route is what belongs in a Kaggle submission.
+
+## Physical production routes
+
+`agriculture_kaggle.production` is the first strategy-specific execution layer.
+`generate_production_route()` compiles a crop choice into movement, structured
+planting (`["PLANT", crop]`), daily return-to-plot movement, watering,
+harvesting, shed drop, and terminal sale actions. The route is deliberately
+single-plot and deterministic so it can be used as a verified baseline while
+the optimizer learns when to add plots, land, workers, or animals.
+
+The reusable `WorkerQueue` pads missing worker actions with `PASS`, and
+`animal_care_cycle()` plus `animal_care_queue()` provide the one-action-per-turn
+maintenance sequence `FEED`, `CARE`, `HARVEST`, `COLLECT_FERTILIZER` on a
+repeatable daily schedule. The production agent is
+available for local experiments without changing the default Simple Joe
+submission:
+
+```bash
+uv run python -c 'from agriculture_kaggle.simulation import run_episode; from agriculture_kaggle.training import make_production_agent; print(run_episode(make_production_agent("WHEAT"), seed=7).rewards)'
+```
+
+This route is evaluated against the actual Kaggriculture engine; it is not a
+surrogate production model. `generate_full_physical_route()` now compiles up
+to two crop plots, hired-hand action tapes, animal purchase orders, and
+recurring feed/care/harvest/fertilizer maintenance into the same engine action
+format. It remains a deterministic execution baseline while the optimizer
+learns plot coordinates, animal placement timing, and worker assignment.
+
+Search these physical configurations with separate training and holdout seeds:
+
+```bash
+uv run python scripts/search_physical.py \
+  --training-seeds 7 1234 \
+  --holdout-seeds 543043 \
+  --crops WHEAT MELON \
+  --worker-days 5 10 15 20 \
+  --opponent /path/to/v56/main.py \
+  --json artifacts/physical-search.json
+```
+
+The search compares single- and two-plot routes, worker crop lanes, optional
+fertilizer, and no-animal/goose/sheep/cow alternatives. It reports holdout
+performance but does not upload or replace the V56 submission automatically.
+When `--opponent` is supplied, the training search itself runs against that
+agent and the selected route is evaluated in both seats on the holdout seeds.
+
+## Strategic beam planning
+
+The strategic layer searches over daily economic decisions and compiles the
+selected plan into a physical route. It is deliberately separate from the
+default Simple Joe submission until it beats the benchmark on held-out seeds:
+
+```bash
+uv run python -c 'from agriculture_kaggle.strategic import initial_strategic_state, plan_season; p=plan_season(initial_strategic_state(), days=30, width=32); print(p.score, p.actions_by_day[:3])'
+```
+
+To run the compiled strategic agent through the official engine:
+
+```bash
+uv run python -c 'from agriculture_kaggle.simulation import run_episode; from agriculture_kaggle.training import make_strategic_agent; print(run_episode(make_strategic_agent(days=30, width=32), seed=7).rewards)'
+```
+
+The first multi-plot physical baseline uses one wheat plot and one melon plot:
+
+```bash
+uv run python -c 'from agriculture_kaggle.production import make_multi_plot_agent; from agriculture_kaggle.simulation import run_episode; print(run_episode(make_multi_plot_agent(), seed=7).rewards)'
+```
+
+The planner currently models crop and economic commitments conservatively and
+uses the verified route compiler. The next improvement is to add land, animal,
+and worker route compilation, then train an RL policy to select among planner
+candidates.
+
+## Tabular Q-learning prototype
+
+The Q-learning layer now learns `Q(strategic_state, strategic_action)` over the
+compact transition model. It is intentionally model-based at this stage; the
+result must still be compiled to a physical route and evaluated in the
+official engine before it is eligible for submission:
+
+```bash
+uv run python scripts/train_q_policy.py \
+  --episodes 100 \
+  --seeds 7 1234 543043 \
+  --output artifacts/q-policy.json
+```
+
+The learned values are not yet a competitive Kaggle policy because crop ages,
+multi-plot physical schedules, animals, and workers still need to be connected
+to the official-engine transition loop.
+
 ## Configuration Defaults
 
 Per-crop seed costs and per-product base prices are not configurable; they are documented in the Object Types and Price Function tables above. The configurable knobs are:
